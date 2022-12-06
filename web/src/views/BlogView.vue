@@ -1,21 +1,24 @@
 <template>
   <div class="blog">
     <h1>Welcome to your Vue + Sanity Blog</h1>
-    <div>
-      <span value="Web Development">Web Development</span>
-      <span value="Web Development">Product Management</span>
-    </div>
+    <p v-for="filter in filters" :key="filter" @click="filterPosts(filter)">
+      {{ filter }}
+    </p>
     <div class="posts">
       <div class="loading" v-if="loading">Loading...</div>
       <div v-if="error" class="error">
         {{ error }}
       </div>
       <div class="container">
-        <div v-for="post in posts" class="post-item" :key="post._id">
+        <div v-for="post in posts" class="post-item" :key="post.id">
           <router-link :to="`/blog/${post.slug.current}`">
             <h2>{{ post.title }}</h2>
+            <h2>{{ post.categoryTitles.toString() }}</h2>
           </router-link>
           <p>{{ post.description }}</p>
+          <p v-for="category in post.categories" :key="category">
+            {{ category.title }}
+          </p>
           <hr />
         </div>
       </div>
@@ -25,13 +28,44 @@
 
 <script>
 import sanity from '../client';
+import { ref } from 'vue';
 
-const query = `*[_type == "post"]{
+const filters = ref([
+  'All',
+  'Web Development',
+  'Product Management',
+  'Data Analysis',
+  'Music',
+  'Personal',
+]);
+
+const activeFilter = ref('');
+
+function filterPosts(type) {
+  activeFilter.value = type;
+}
+const query = `*[_type == "post"] | order(publishedAt desc){
     _id,
     title,
+    titleColour,
     slug,
-    description
-  }[0...50]`;
+    postCardType,
+    "authorName": author->name,
+    publishedAt,
+    body,
+    description,
+    mainImage{
+        asset -> {
+            _id,
+            url
+        }
+    },
+    categories [] -> {
+      title,
+      slug
+    },
+    "categoryTitles": categories[]->title,
+  }`;
 
 export default {
   name: 'BlogView',
@@ -39,6 +73,9 @@ export default {
     return {
       loading: true,
       posts: [],
+      filters,
+      filterPosts,
+      activeFilter,
     };
   },
   created() {
@@ -57,6 +94,9 @@ export default {
           this.error = error;
         }
       );
+    },
+    async mounted() {
+      this.posts = await this.fetchData();
     },
   },
 };
