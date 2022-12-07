@@ -1,49 +1,44 @@
 <template>
   <div class="blog">
     <h1>Welcome to your Vue + Sanity Blog</h1>
-    <p v-for="filter in filters" :key="filter" @click="filterPosts(filter)">
-      {{ filter }}
-    </p>
+    <div v-for="filter in filters" :key="`${filter}`">
+      <input
+        type="checkbox"         
+        :name="`${filter}-check`"
+        :value="filter"
+        v-model="selectedFilters"
+      />
+      <label for="`${filter}-check`"> {{ filter }}</label>
+    </div>
+
     <div class="posts">
       <div class="loading" v-if="loading">Loading...</div>
       <div v-if="error" class="error">
         {{ error }}
       </div>
       <div class="container">
-        <div v-for="post in posts" class="post-item" :key="post.id">
-          <router-link :to="`/blog/${post.slug.current}`">
-            <h2>{{ post.title }}</h2>
-            <h2>{{ post.categoryTitles.toString() }}</h2>
-          </router-link>
-          <p>{{ post.description }}</p>
-          <p v-for="category in post.categories" :key="category">
-            {{ category.title }}
-          </p>
-          <hr />
-        </div>
+        <blog-view-item v-for="post in filteredPosts" class="post-item" :key="post.id" :post="post" ></blog-view-item>
+ 
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import sanity from '../client';
-import { ref } from 'vue';
+<script lang="js">
+import sanity from "../client";
+import BlogViewItem from "../components/blog/BlogViewItem.vue";
 
-const filters = ref([
-  'All',
-  'Web Development',
-  'Product Management',
-  'Data Analysis',
-  'Music',
-  'Personal',
-]);
+// const selectedFilters = ref([]);
 
-const activeFilter = ref('');
+// const filters = ref([
+//   "All",
+//   "Web Development",
+//   "Product Management",
+//   "Data Analysis",
+//   "Music",
+//   "Personal",
+// ]);
 
-function filterPosts(type) {
-  activeFilter.value = type;
-}
 const query = `*[_type == "post"] | order(publishedAt desc){
     _id,
     title,
@@ -68,18 +63,28 @@ const query = `*[_type == "post"] | order(publishedAt desc){
   }`;
 
 export default {
-  name: 'BlogView',
+  name: "BlogView",
+  components:{
+    BlogViewItem
+  },
   data() {
     return {
       loading: true,
       posts: [],
-      filters,
-      filterPosts,
-      activeFilter,
+      filteredPosts: [],
+      filters: [
+        "All",
+        "Web Development",
+        "Product Management",
+        "Data Analysis",
+        "Music",
+        "Personal",
+      ],
+      selectedFilters: [],
     };
   },
-  created() {
-    this.fetchData();
+  async created() {
+    await this.fetchData();
   },
   methods: {
     fetchData() {
@@ -89,14 +94,27 @@ export default {
         (posts) => {
           this.loading = false;
           this.posts = posts;
+          this.filteredPosts = posts;
         },
         (error) => {
           this.error = error;
         }
       );
     },
-    async mounted() {
-      this.posts = await this.fetchData();
+  },
+  watch: {
+    selectedFilters: {
+      async handler(selectedCategories) {
+        if (selectedCategories.length < 1) {
+          this.filteredPosts = this.posts;
+          return;
+        }
+
+        this.filteredPosts = this.posts.filter((post) =>
+          selectedCategories.some((category) => post.categories.map(c=>c.title).includes(category))
+        );
+      },
+      immediate: true,
     },
   },
 };
