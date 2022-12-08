@@ -1,6 +1,7 @@
 <template>
   <div>
     <div class="loading" v-if="loading">Loading...</div>
+    <input v-model="text"/>
 
     <div v-if="error" class="error">
       {{ error }}
@@ -58,11 +59,13 @@ const query = `*[slug.current == $slug] {
 export default {
   name: 'PostView',
   components: { SanityBlocks },
+  props:["slug"],
   data() {
     return {
       loading: true,
-      post: [],
+      post: {},
       blocks: [],
+      text:""
     };
   },
   created() {
@@ -75,7 +78,7 @@ export default {
     fetchData() {
       this.error = this.post = null;
       this.loading = true;
-      sanity.fetch(query, { slug: this.$route.params.slug }).then(
+      sanity.fetch(query, { slug: this.slug }).then(
         (post) => {
           this.loading = false;
           this.post = post;

@@ -1,27 +1,47 @@
 <template>
-  <div class="blog">
-    <h1>Welcome to your Vue + Sanity Blog</h1>
-    <div v-for="filter in filters" :key="`${filter}`">
-      <input
-        type="checkbox"         
-        :name="`${filter}-check`"
-        :value="filter"
-        v-model="selectedFilters"
-      />
-      <label for="`${filter}-check`"> {{ filter }}</label>
-    </div>
+  <v-container  class="blog">
+    <v-row>
+      <v-col>
+        <v-chip-group v-model="selectedFilters" multiple>
+          <v-chip v-for="filter in filters" :key="`${filter}`" :value="filter"
+            >{{ filter }}
+          </v-chip>
+        </v-chip-group>
+        <!-- <div v-for="filter in filters" :key="`${filter}`">
+          <input
+            type="checkbox"
+            :name="`${filter}-check`"
+            :value="filter"
+            v-model="selectedFilters"
+          />
+          <label for="`${filter}-check`"> {{ filter }}</label>
+        </div> -->
 
-    <div class="posts">
-      <div class="loading" v-if="loading">Loading...</div>
-      <div v-if="error" class="error">
-        {{ error }}
-      </div>
-      <div class="container">
-        <blog-view-item v-for="post in filteredPosts" class="post-item" :key="post.id" :post="post" ></blog-view-item>
- 
-      </div>
-    </div>
-  </div>
+        <div class="posts">
+          <div class="loading" v-if="loading">Loading...</div>
+          <div v-if="error" class="error">
+            {{ error }}
+          </div>
+          <div class="container">
+            <blog-view-item
+              v-for="post in filteredPosts"
+              class="post-item"
+              :key="post.id"
+              :post="post"
+            ></blog-view-item>
+          </div>
+        </div>
+      </v-col>
+      <v-col>
+        <!-- <router-view :key="$route.fullPath"/> -->
+        <router-view :key="$route.fullPath" v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
+      </v-col>
+    </v-row>
+  </v-container >
 </template>
 
 <script lang="js">
